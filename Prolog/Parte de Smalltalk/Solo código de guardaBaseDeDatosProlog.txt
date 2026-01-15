@@ -1,0 +1,58 @@
+guardaBaseDeDatosProlog
+	| archivo fechaActual |
+	archivo := (nombreCentro, '.pl') asFileReference writeStream.
+	fechaActual := Date today.
+	
+	archivo nextPutAll: '% --- Base de Datos de Pacientes ---'; cr.
+	
+	listaPacientes valuesDo: [:paciente |
+		| meses |
+		meses := self mesesEnLista: (fechasIngreso at: paciente getDNI) hasta: fechaActual.
+		archivo
+			nextPutAll: 'paciente(dni(';
+			nextPutAll: paciente getDNI asString;
+			nextPutAll: '), nombre("';
+			nextPutAll: paciente getNombre;
+			nextPutAll: '", "';
+			nextPutAll: paciente getApellido;
+			nextPutAll: '"), tiempo_espera(';
+			nextPutAll: meses asString;
+			nextPutAll: ')).';
+			cr.
+	].
+
+	archivo cr; nextPutAll: '% --- Base de Datos de Donantes Registrados ---'; cr.
+	
+	asociaciones keysAndValuesDo: [:dniPaciente :dniDonante |
+		| donante |
+		donante := listaDonantes at: dniDonante.
+		archivo
+			nextPutAll: 'donante(dni(';
+			nextPutAll: dniDonante asString;
+			nextPutAll: '), nombre("';
+			nextPutAll: donante getNombre;
+			nextPutAll: '", "';
+			nextPutAll: donante getApellido;
+			nextPutAll: '"), dni_paciente(';
+			nextPutAll: dniPaciente asString;
+			nextPutAll: ')).';
+			cr.
+	].
+
+	archivo cr; nextPutAll: '% --- Base de Datos de Compatibilidades (>= 50%) ---'; cr.
+	
+	resultados do: [:resultado |
+		resultado compatible ifTrue: [
+			archivo
+				nextPutAll: 'compatibilidad(';
+				nextPutAll: resultado getDonante getDNI asString;
+				nextPutAll: ', ';
+				nextPutAll: resultado getPaciente getDNI asString;
+				nextPutAll: ', ';
+				nextPutAll: resultado porcentajeCompatibilidad asString;
+				nextPutAll: ').';
+				cr.
+		].
+	].
+
+	archivo close.

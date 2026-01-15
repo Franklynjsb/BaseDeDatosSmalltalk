@@ -1,0 +1,59 @@
+| centro evaluador pacientes donantes p1 p2 p3 p4 d1 d2 d3 d4 hlaComun |
+"================================================================"
+" CASO 1: MÚLTIPLES CADENAS "
+"================================================================"
+centro := CentroTrasplantes conNombre: 'HospitalCadenasMultiples'.
+evaluador := EvaluadorCompatibilidad new.
+evaluador agregaCriterioObligatorio: CriterioABO new.
+evaluador agregaCriterioObligatorio: CriterioCrossmatch new.
+evaluador agregaCriterioObligatorio: CriterioSerologias new.
+evaluador agregaCriterioObligatorio: CriterioEstadoClinico new.
+hlaComun := EstudioTipificacionHLA conA: #(A1 A2) b: #(B7 B44) dR: #(DR1 DR4).
+evaluador agregaCriterioDeseable: CriterioHLA new ponderacion: 100.
+centro evaluadorCompatibilidad: evaluador.
+
+pacientes := OrderedCollection new.
+donantes := OrderedCollection new.
+
+1 to: 4 do: [:i |
+    | p d |
+    p := Persona conDni: (100+i) nombre: ('P', i asString) apellido: 'Multi' 
+        fechaNacimiento: (Date year: 2000 month: 1 day: 1).
+    p peso: 70; estatura: 1.7.
+    p registraEstudio: (AnalisisDeSangre conGrupoSanguineo: #O).
+    p registraEstudio: (EstudioSerologicoCompleto conResultado: #apto).
+    p registraEstudio: hlaComun.
+    centro agregaPaciente: p fechaIngreso: (Date year: 2024 month: 1 day: 1).
+    pacientes add: p.
+
+    d := Persona conDni: (200+i) nombre: ('D', i asString) apellido: 'Multi' 
+        fechaNacimiento: (Date year: 2000 month: 1 day: 1).
+    d peso: 70; estatura: 1.7.
+    d registraEstudio: (AnalisisDeSangre conGrupoSanguineo: #O).
+    d registraEstudio: (EstudioSerologicoCompleto conResultado: #apto).
+    d registraEstudio: (EstudioAptitudGeneral conResultado: #apto).
+    d registraEstudio: hlaComun.
+    centro agregaDonante: d.
+    donantes add: d.
+    
+    centro asociaPaciente: p conDonante: d.
+].
+
+p1 := pacientes at: 1. p2 := pacientes at: 2. p3 := pacientes at: 3. p4 := pacientes at: 4.
+d1 := donantes at: 1. d2 := donantes at: 2. d3 := donantes at: 3. d4 := donantes at: 4.
+
+p2 registraEstudio: (EstudioCrossmatch conResultado: #negativo) con: d1.
+p3 registraEstudio: (EstudioCrossmatch conResultado: #negativo) con: d2.
+p4 registraEstudio: (EstudioCrossmatch conResultado: #negativo) con: d3.
+p1 registraEstudio: (EstudioCrossmatch conResultado: #negativo) con: d4.
+
+p3 registraEstudio: (EstudioCrossmatch conResultado: #negativo) con: d1.
+p1 registraEstudio: (EstudioCrossmatch conResultado: #negativo) con: d3.
+p4 registraEstudio: (EstudioCrossmatch conResultado: #negativo) con: d2.
+p2 registraEstudio: (EstudioCrossmatch conResultado: #negativo) con: d4.
+
+
+centro calculaCompatibilidadesGeneral. 
+centro guardaBaseDeDatosProlog.
+
+Transcript show: 'Archivo HospitalCadenasMultiples.pl generado.'; cr.

@@ -1,0 +1,60 @@
+| centro evaluador pacientes donantes hlaComun fechaComun |
+"================================================================"
+" CASO 2: CADENA ÚNICA"
+"================================================================"
+" 1. Crear Centro y Evaluador "
+centro := CentroTrasplantes conNombre: '--HospitalCadenaLarga--'.
+evaluador := EvaluadorCompatibilidad new.
+
+"Criterios Obligatorios"
+evaluador agregaCriterioObligatorio: CriterioABO new.
+evaluador agregaCriterioObligatorio: CriterioCrossmatch new.
+evaluador agregaCriterioObligatorio: CriterioSerologias new.
+evaluador agregaCriterioObligatorio: CriterioEstadoClinico new.
+
+hlaComun := EstudioTipificacionHLA conA: #(A1 A1) b: #(B1 B1) dR: #(DR1 DR1).
+fechaComun := Date year: 1990 month: 1 day: 1.
+evaluador agregaCriterioDeseable: CriterioHLA new ponderacion: 80.
+evaluador agregaCriterioDeseable: CriterioEdad new ponderacion: 10.
+evaluador agregaCriterioDeseable: CriterioTamanoCorporal new ponderacion: 10.
+centro evaluadorCompatibilidad: evaluador.
+
+pacientes := OrderedCollection new.
+donantes := OrderedCollection new.
+
+1 to: 8 do: [:i |
+    | p d |
+    p := Persona conDni: (800+i) nombre: ('P', i asString) apellido: 'Largo' 
+        fechaNacimiento: fechaComun.
+    p peso: 75; estatura: 1.8.
+    p registraEstudio: (AnalisisDeSangre conGrupoSanguineo: #O).
+    p registraEstudio: (EstudioSerologicoCompleto conResultado: #apto).
+    p registraEstudio: hlaComun.
+    centro agregaPaciente: p fechaIngreso: (Date year: 2023 month: 1 day: 1).
+    pacientes add: p.
+
+    d := Persona conDni: (900+i) nombre: ('D', i asString) apellido: 'Largo' 
+        fechaNacimiento: fechaComun.
+    d peso: 75; estatura: 1.8.
+    d registraEstudio: (AnalisisDeSangre conGrupoSanguineo: #O).
+    d registraEstudio: (EstudioSerologicoCompleto conResultado: #apto).
+    d registraEstudio: (EstudioAptitudGeneral conResultado: #apto). 
+    d registraEstudio: hlaComun.
+    centro agregaDonante: d.
+    donantes add: d.
+    
+    centro asociaPaciente: p conDonante: d.
+].
+
+1 to: 8 do: [:i |
+    | donante receptor |
+    donante := donantes at: i.
+    receptor := pacientes at: (i % 8 + 1).
+    receptor registraEstudio: (EstudioCrossmatch conResultado: #negativo) con: donante.
+].
+
+
+centro calculaCompatibilidadesGeneral. 
+centro guardaBaseDeDatosProlog.
+
+Transcript show: 'Archivo --HospitalCadenaLarga--.pl generado.'; cr.
